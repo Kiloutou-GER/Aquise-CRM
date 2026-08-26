@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akquise-CRM Strabag</title>
+<style>
+  :root{
+    --accent:#185FA5; --accent-light:#E6F1FB; --danger:#A32D2D; --danger-light:#FCEBEB;
+    --success:#3B6D11; --success-light:#EAF3DE; --border:#D9D9D6; --border-strong:#B4B2A9;
+    --text-primary:#2C2C2A; --text-secondary:#5F5E5A; --text-muted:#888780;
+    --surface-0:#F1EFE8; --surface-1:#F7F6F2; --surface-2:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--surface-0);color:var(--text-primary);}
+  .app{max-width:420px;margin:0 auto;padding:16px;padding-bottom:80px;}
+  h1{font-size:18px;font-weight:600;margin:0 0 4px;}
+  .subtitle{font-size:13px;color:var(--text-secondary);margin:0 0 20px;}
+  .deadline{display:inline-block;background:var(--danger-light);color:var(--danger);font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;margin-bottom:16px;}
+  .whoami{display:flex;align-items:center;justify-content:space-between;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:20px;}
+  .whoami button{background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;}
+  .card{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+  label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin:14px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  input,select,textarea{width:100%;padding:0 12px;border:1px solid var(--border-strong);border-radius:8px;font-size:16px;background:var(--surface-2);color:var(--text-primary);font-family:inherit;}
+  input,select{height:44px;}
+  textarea{padding:10px 12px;min-height:80px;resize:vertical;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .error{color:var(--danger);font-size:12px;margin-top:4px;display:none;}
+  button.submit{width:100%;height:48px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;margin-top:20px;cursor:pointer;}
+  button.submit:active{opacity:0.85;}
+  .status{font-size:13px;padding:10px 12px;border-radius:8px;margin-top:12px;display:none;}
+  .status.ok{background:var(--success-light);color:var(--success);display:block;}
+  .section-title{font-size:15px;font-weight:600;margin:24px 0 10px;display:flex;justify-content:space-between;align-items:center;}
+  .count{font-size:13px;font-weight:400;color:var(--text-secondary);}
+  .entry{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative;}
+  .entry .firma{font-weight:600;font-size:14px;padding-right:24px;}
+  .entry .meta{font-size:12px;color:var(--text-secondary);margin-top:3px;line-height:1.5;}
+  .entry .notiz{font-size:12px;color:var(--text-primary);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);white-space:pre-wrap;}
+  .entry .del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;line-height:1;}
+  .empty{font-size:13px;color:var(--text-muted);text-align:center;padding:20px 0;}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .export{height:44px;background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;}
+  .export:active{background:var(--surface-1);}
+  .export.mail{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .gate{max-width:340px;margin:60px auto;padding:24px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;text-align:center;}
+  .gate h2{font-size:16px;font-weight:600;margin:0 0 6px;}
+  .gate p{font-size:13px;color:var(--text-secondary);margin:0 0 18px;}
+  .gate input{margin-bottom:10px;}
+  .gate button{width:100%;height:44px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;}
+  .gate .error{text-align:left;}
+  .hidden{display:none;}
+  .hint{font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <h2>Willkommen</h2>
+  <p>Bitte einmalig Namen eingeben, bevor es losgeht. Dieser erscheint dann automatisch in allen Einträgen.</p>
+  <input type="text" id="gateName" placeholder="Vor- und Nachname">
+  <div class="error" id="err-gateName">Bitte Namen eingeben</div>
+  <button id="gateBtn">Los geht's</button>
+</div>
+
+<div class="app hidden" id="app">
+  <h1>Strabag Akquise-Log</h1>
+  <p class="subtitle">Kontaktaufnahme dokumentieren</p>
+  <div class="deadline">Frist: 30.09.2026</div>
+  <div class="whoami">
+    <span id="whoamiName">Erfasst von: —</span>
+    <button id="changeNameBtn">ändern</button>
+  </div>
+
+  <div class="card">
+    <label>Firma / Standort</label>
+    <input type="text" id="firma" placeholder="z. B. Strabag Bauunternehmen Hamburg">
+    <div class="error" id="err-firma">Bitte Firma eingeben</div>
+
+    <label>Ansprechpartner</label>
+    <input type="text" id="ansprechpartner" placeholder="Name des Ansprechpartners">
+    <div class="error" id="err-ansprechpartner">Bitte Ansprechpartner eingeben</div>
+
+    <label>Telefonnummer</label>
+    <input type="tel" id="telefon" placeholder="+49 ...">
+    <div class="error" id="err-telefon">Bitte Telefonnummer eingeben</div>
+
+    <label>E-Mail</label>
+    <input type="email" id="email" placeholder="name@firma.de">
+    <div class="error" id="err-email">Bitte gültige E-Mail eingeben</div>
+
+    <div class="row2">
+      <div>
+        <label>Datum</label>
+        <input type="date" id="datum">
+        <div class="error" id="err-datum">Pflichtfeld</div>
+      </div>
+      <div>
+        <label>Uhrzeit</label>
+        <input type="time" id="uhrzeit">
+        <div class="error" id="err-uhrzeit">Pflichtfeld</div>
+      </div>
+    </div>
+
+    <label>Notizen (Besprochenes / nächste Schritte)</label>
+    <textarea id="notizen" placeholder="Was wurde besprochen? Was folgt als Nächstes?"></textarea>
+
+    <label>Folgetermin</label>
+    <select id="folgetermin">
+      <option value="">Kein Folgetermin</option>
+      <option value="1 Woche">1 Woche</option>
+      <option value="14 Tage">14 Tage</option>
+      <option value="1 Monat">1 Monat</option>
+      <option value="3 Monate">3 Monate</option>
+    </select>
+
+    <button class="submit" id="submitBtn">Besuch speichern</button>
+    <div class="status ok" id="statusMsg">Eintrag gespeichert.</div>
+  </div>
+
+  <div class="section-title">Meine Einträge <span class="count" id="countLabel">0</span></div>
+  <div id="entryList"></div>
+  <div class="empty" id="emptyMsg">Noch keine Einträge erfasst.</div>
+
+  <div class="btnrow">
+    <button class="export mail" id="mailBtn">Per E-Mail senden</button>
+    <button class="export" id="exportBtn">CSV herunterladen</button>
+  </div>
+  <div class="hint">E-Mail-Versand öffnet Gmail mit vorausgefülltem Text an mhenrici@kiloutou.de</div>
+</div>
+
+<script>
+let entries = [];
+let mitarbeiterName = null;
+const ZIELMAIL = 'mhenrici@kiloutou.de';
+const STORAGE_KEY_NAME = 'akquise_profil_name';
+const STORAGE_KEY_ENTRIES = 'akquise_besuch_entries';
+
+function todayISO(){
+  return new Date().toISOString().slice(0,10);
+}
+function nowHHMM(){
+  return new Date().toTimeString().slice(0,5);
+}
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function loadName(){
+  try{ return localStorage.getItem(STORAGE_KEY_NAME); }catch(e){ return null; }
+}
+function saveName(name){
+  try{ localStorage.setItem(STORAGE_KEY_NAME, name); return true; }catch(e){ return false; }
+}
+function loadEntriesFromStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY_ENTRIES);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveEntriesToStorage(list){
+  try{ localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(list)); return true; }catch(e){ return false; }
+}
+
+function init(){
+  mitarbeiterName = loadName();
+  if(mitarbeiterName){
+    showApp();
+  }else{
+    showGate();
+  }
+}
+
+function showGate(){
+  document.getElementById('gate').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+
+function showApp(){
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('whoamiName').textContent = 'Erfasst von: ' + mitarbeiterName;
+  document.getElementById('datum').value = todayISO();
+  document.getElementById('uhrzeit').value = nowHHMM();
+  entries = loadEntriesFromStorage();
+  renderEntries();
+}
+
+document.getElementById('gateBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('gateName').value.trim();
+  const errEl = document.getElementById('err-gateName');
+  if(!name){
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  if(!saveName(name)){
+    alert('Speichern fehlgeschlagen. Bitte Browser-Einstellungen prüfen.');
+    return;
+  }
+  mitarbeiterName = name;
+  showApp();
+});
+
+document.getElementById('changeNameBtn').addEventListener('click', ()=>{
+  document.getElementById('gateName').value = mitarbeiterName || '';
+  showGate();
+});
+
+function renderEntries(){
+  const list = document.getElementById('entryList');
+  const empty = document.getElementById('emptyMsg');
+  const count = document.getElementById('countLabel');
+  count.textContent = entries.length;
+  list.innerHTML = '';
+  if(entries.length === 0){
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  entries.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    const notizBlock = e.notizen ? `<div class="notiz">${escapeHtml(e.notizen)}</div>` : '';
+    const folgeLine = e.folgetermin ? ` · Folgetermin: ${escapeHtml(e.folgetermin)}` : '';
+    div.innerHTML = `
+      <button class="del" data-id="${e.id}" aria-label="Eintrag löschen">&times;</button>
+      <div class="firma">${escapeHtml(e.firma)}</div>
+      <div class="meta">
+        ${escapeHtml(e.ansprechpartner)} · ${escapeHtml(e.telefon)}<br>
+        ${escapeHtml(e.email)}<br>
+        ${escapeHtml(e.datum)} ${escapeHtml(e.uhrzeit)} · erfasst von ${escapeHtml(e.mitarbeiter)}${folgeLine}
+      </div>
+      ${notizBlock}`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-id');
+      entries = entries.filter(e=>e.id !== id);
+      saveEntriesToStorage(entries);
+      renderEntries();
+    });
+  });
+}
+
+function showError(field, show){
+  document.getElementById('err-'+field).style.display = show ? 'block' : 'none';
+}
+
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  const firma = document.getElementById('firma').value.trim();
+  const ansprechpartner = document.getElementById('ansprechpartner').value.trim();
+  const telefon = document.getElementById('telefon').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const datum = document.getElementById('datum').value;
+  const uhrzeit = document.getElementById('uhrzeit').value;
+  const notizen = document.getElementById('notizen').value.trim();
+  const folgetermin = document.getElementById('folgetermin').value;
+
+  let valid = true;
+  showError('firma', !firma); if(!firma) valid=false;
+  showError('ansprechpartner', !ansprechpartner); if(!ansprechpartner) valid=false;
+  showError('telefon', !telefon); if(!telefon) valid=false;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  showError('email', !emailOk); if(!emailOk) valid=false;
+  showError('datum', !datum); if(!datum) valid=false;
+  showError('uhrzeit', !uhrzeit); if(!uhrzeit) valid=false;
+
+  if(!valid) return;
+
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const entry = { id, mitarbeiter: mitarbeiterName, firma, ansprechpartner, telefon, email, datum, uhrzeit, notizen, folgetermin, created: Date.now() };
+
+  entries.unshift(entry);
+  if(!saveEntriesToStorage(entries)){
+    alert('Speichern fehlgeschlagen. Bitte erneut versuchen.');
+    entries.shift();
+    return;
+  }
+  renderEntries();
+
+  ['firma','ansprechpartner','telefon','email','notizen'].forEach(f=> document.getElementById(f).value = '');
+  document.getElementById('folgetermin').value = '';
+  document.getElementById('datum').value = todayISO();
+  document.getElementById('uhrzeit').value = nowHHMM();
+
+  const status = document.getElementById('statusMsg');
+  status.style.display = 'block';
+  setTimeout(()=> status.style.display = 'none', 2500);
+});
+
+function buildCsv(){
+  const header = ['Mitarbeiter','Firma','Ansprechpartner','Telefon','E-Mail','Datum','Uhrzeit','Notizen','Folgetermin'];
+  const rows = entries.map(e => [e.mitarbeiter, e.firma, e.ansprechpartner, e.telefon, e.email, e.datum, e.uhrzeit, e.notizen || '', e.folgetermin || '']);
+  return [header, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(';')).join('\r\n');
+}
+
+function buildPlainSummary(){
+  return entries.map((e,i) =>
+    (i+1) + '. ' + e.firma + '\n' +
+    '   Ansprechpartner: ' + e.ansprechpartner + ' (' + e.telefon + ', ' + e.email + ')\n' +
+    '   Termin: ' + e.datum + ' ' + e.uhrzeit + '\n' +
+    (e.notizen ? '   Notizen: ' + e.notizen + '\n' : '') +
+    (e.folgetermin ? '   Folgetermin: ' + e.folgetermin + '\n' : '') +
+    '   Erfasst von: ' + e.mitarbeiter
+  ).join('\n\n');
+}
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(entries.length === 0){
+    alert('Keine Einträge zum Export vorhanden.');
+    return;
+  }
+  const csvContent = buildCsv();
+  const blob = new Blob(['\uFEFF' + csvContent], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'akquise_log_' + todayISO() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('mailBtn').addEventListener('click', ()=>{
+  if(entries.length === 0){
+    alert('Keine Einträge zum Versenden vorhanden.');
+    return;
+  }
+  const subject = 'Akquise-Log ' + (mitarbeiterName || '') + ' – ' + todayISO();
+  const body = 'Akquise-Log von ' + mitarbeiterName + ' (' + entries.length + ' Einträge)\n\n' + buildPlainSummary();
+  const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(ZIELMAIL) +
+    '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.open(gmailUrl, '_blank');
+});
+
+init();
+</script>
+</body>
+</html>
